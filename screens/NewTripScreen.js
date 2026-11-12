@@ -9,6 +9,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { colors } from '../theme';
 import { loadData, saveData } from '../storage';
 import { useLang } from '../i18n';
+import Avatar from '../Avatar';
 
 // 1 minute is for testing the overdue alert quickly. Remove it before final use if you like.
 const DURATIONS = [1, 15, 30, 45, 60, 90];
@@ -23,12 +24,16 @@ export default function NewTripScreen({ navigation }) {
   const [contactCount, setContactCount] = useState(0);
   const [activeTrip, setActiveTrip] = useState(null);
   const [profileName, setProfileName] = useState('');
+  const [profileAvatar, setProfileAvatar] = useState(null);
 
   useFocusEffect(
     useCallback(() => {
       loadData('contacts').then((c) => setContactCount(c.length));
       loadData('activeTrip', null).then(setActiveTrip);
-      loadData('profile', null).then((p) => setProfileName(p && p.name ? p.name : ''));
+      loadData('profile', null).then((p) => {
+        setProfileName(p && p.name ? p.name : '');
+        setProfileAvatar(p && p.avatar ? p.avatar : null);
+      });
     }, [])
   );
 
@@ -92,7 +97,12 @@ export default function NewTripScreen({ navigation }) {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-        {profileName ? <Text style={styles.greeting}>{t('greeting', { name: profileName })}</Text> : null}
+        {profileName ? (
+          <View style={styles.greetRow}>
+            <Avatar uri={profileAvatar} size={46} />
+            <Text style={styles.greeting}>{t('greeting', { name: profileName })}</Text>
+          </View>
+        ) : null}
 
         {activeTrip && (
           <View style={styles.banner}>
@@ -182,7 +192,8 @@ export default function NewTripScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { padding: 16 },
-  greeting: { color: colors.yellow, fontSize: 22, fontWeight: 'bold', marginBottom: 8 },
+  greetRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
+  greeting: { color: colors.yellow, fontSize: 22, fontWeight: 'bold', marginLeft: 10 },
   banner: {
     backgroundColor: colors.yellow, borderRadius: 10, padding: 12,
     flexDirection: 'row', alignItems: 'center', marginBottom: 16,

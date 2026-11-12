@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../theme';
 import { loadData, saveData } from '../storage';
 import { useLang } from '../i18n';
+import { callNumber } from '../phone';
 
 const KEY = 'contacts';
 
@@ -86,6 +87,9 @@ export default function ContactsScreen() {
               <Text style={styles.name}>{item.name}</Text>
               <Text style={styles.phone}>{item.phone}</Text>
             </View>
+            <TouchableOpacity onPress={() => callNumber(item.phone, t)} style={{ marginRight: 18 }}>
+              <Ionicons name="call" size={22} color={colors.yellow} />
+            </TouchableOpacity>
             <TouchableOpacity onPress={() => removeContact(item.id)}>
               <Ionicons name="trash" size={22} color="#FF5252" />
             </TouchableOpacity>

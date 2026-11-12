@@ -10,6 +10,8 @@ import { colors } from '../theme';
 import { loadData, saveData } from '../storage';
 import { useLang } from '../i18n';
 import PhotoThumb from '../PhotoThumb';
+import { useShake } from '../shake';
+import { callNumber } from '../phone';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -78,6 +80,7 @@ export default function ActiveTripScreen({ navigation }) {
   const [coords, setCoords] = useState(null);
   const [denied, setDenied] = useState(false);
   const [now, setNow] = useState(Date.now());
+  const [shakeOn, setShakeOn] = useState(true);
   const mapRef = useRef(null);
 
   useFocusEffect(
@@ -85,6 +88,8 @@ export default function ActiveTripScreen({ navigation }) {
       let active = true;
       let sub = null;
       let timer = null;
+
+      loadData('shakeSos', true).then((v) => active && setShakeOn(v !== false));
 
       (async () => {
         const tr = await loadData('activeTrip', null);
@@ -163,6 +168,7 @@ export default function ActiveTripScreen({ navigation }) {
   };
 
   const sendSos = () => {
+    if (!trip) return;
     Alert.alert(t('sosTitle'), t('sosMsg'), [
       { text: t('cancel'), style: 'cancel' },
       {
@@ -203,6 +209,9 @@ export default function ActiveTripScreen({ navigation }) {
       },
     ]);
   };
+
+  // Shaking the phone 3 times opens the SOS confirmation (works on any tab while a trip is active)
+  useShake(!!trip && shakeOn, () => sendSos());
 
   const finishTrip = async (status) => {
     if (trip.notifIds) {
@@ -283,6 +292,18 @@ export default function ActiveTripScreen({ navigation }) {
           <Text style={[styles.btnText, { color: '#fff' }]}>  {t('sosButton')}</Text>
         </TouchableOpacity>
 
+        <View style={styles.callRow}>
+          <TouchableOpacity style={[styles.callBtn, { marginRight: 8 }]} onPress={() => callNumber('10111', t)}>
+            <Ionicons name="call" size={16} color={colors.yellow} />
+            <Text style={styles.callText}>  {t('callPolice')}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.callBtn} onPress={() => callNumber('10177', t)}>
+            <Ionicons name="medkit" size={16} color={colors.yellow} />
+            <Text style={styles.callText}>  {t('callAmbulance')}</Text>
+          </TouchableOpacity>
+        </View>
+        {shakeOn ? <Text style={styles.shakeHint}>{t('shakeHint')}</Text> : null}
+
         <TouchableOpacity style={[styles.btn, styles.btnMain]} onPress={() => finishTrip('completed')}>
           <Ionicons name="checkmark-circle" size={20} color={colors.dark} />
           <Text style={[styles.btnText, { color: colors.dark }]}>  {t('arrived')}</Text>
@@ -298,23 +319,30 @@ export default function ActiveTripScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.dark },
-  map: { flex: 1 },
+  map: { flex: 1, minHeight: 120 },
   mapPlaceholder: { alignItems: 'center', justifyContent: 'center', backgroundColor: colors.card },
   panel: { backgroundColor: colors.dark, padding: 16, alignItems: 'center' },
   route: { color: colors.text, fontSize: 16, fontWeight: 'bold', textAlign: 'center' },
   plateRow: { flexDirection: 'row', alignItems: 'center', marginTop: 6 },
   plate: { color: colors.muted },
-  timer: { color: colors.yellow, fontSize: 48, fontWeight: 'bold', marginTop: 8 },
+  timer: { color: colors.yellow, fontSize: 40, fontWeight: 'bold', marginTop: 4 },
   timerOverdue: { color: '#FF5252', fontSize: 34 },
   timerLabel: { color: colors.muted, marginBottom: 12 },
   btn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    borderRadius: 10, padding: 14, width: '100%', marginTop: 8,
+    borderRadius: 10, padding: 12, width: '100%', marginTop: 8,
   },
   btnMain: { backgroundColor: colors.yellow },
   btnLight: { backgroundColor: colors.card },
   btnDanger: { backgroundColor: '#D32F2F' },
   btnSos: { backgroundColor: '#B71C1C' },
+  callRow: { flexDirection: 'row', width: '100%', marginTop: 8 },
+  callBtn: {
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    backgroundColor: colors.card, borderRadius: 10, padding: 12,
+  },
+  callText: { color: colors.text, fontWeight: 'bold', fontSize: 14 },
+  shakeHint: { color: colors.muted, fontSize: 12, marginTop: 6 },
   btnText: { fontWeight: 'bold', fontSize: 16 },
   cancel: { color: colors.muted, marginTop: 14, textDecorationLine: 'underline' },
   empty: { flex: 1, backgroundColor: colors.dark, alignItems: 'center', justifyContent: 'center' },
